@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title><![CDATA[hexo+travisCI]]></title>
+    <url>%2F2017%2F12%2F20%2Fhexo-travisCI%2F</url>
+    <content type="text"><![CDATA[使用 Travis-CI 自动化部署 Hexo 博客Travis CI 是开源的持续集成构建项目，用来构建托管在GitHub上的代码。 架构图如下： 整个流程就是本地编辑*.md文件，然后push到github中source分支，Travis-CI检测到分支更新从而根据配置文件建立虚拟机进行测试/构建，并将结果部署到github中master分支，实现github pages访问。 1. 配置Hexo+GitHub配置方法省略，参见”使用Hexo+Github搭建个人网站“。 12345GitHub 仓库分支架构： master分支：提供Pages服务 存放 Hexo 生成的静态文件 source分支：建议私有仓库 存放 Hexo 项目文件以及构建配置文件&#123;blog/source/.travis.yml&#125; 更改本地环境配置1234567cd blog #进入Hexo项目/博客目录git init #初始化为git仓库git checkout -b source #创建并切换到 source 分支git add .git commit -m &quot;xxx&quot;git remote add origin git@github.com:yourname/yourname.github.io.git #关联远程仓库git push origin source:source #提交本地source分支到远程仓库source分支 2. Travis CI配置使用GitHub账户登陆Travis CI，它会自动发现GitHub上的已有仓，选择需要执行持续集成的仓库。 本教程为：yourname/yourname.github.io。 A. General设置进入设置选项，开启以下服务：12Build only if .travis.yml is present 表示“只有当 .travis.yml 存在时才构建”Build branch updates 表示“当分支更新时构建” 两个选项 B. 配置 Acess Token还是设置选项，增加一条环境变量{Enviroment Variables}： name：与github开发者设置中 Personal access tokens 设置一致。 value：在github开发者设置中 Personal access tokens 页面，新建token，并勾选相应权限。1权限：&#123;这里只需要 repo 下全部和 user 下的 user:email 即可&#125;。 不勾选后面的 Display value in build log。 Travis可通过调用此变量获得github的权限，从而将构建后的静态文件push到github。 3. 配置 .travis.yml在本地环境的源码分支{这里是source分支}的根目录下新增一个 .travis.yml 配置文件，内容如下： 123456789101112131415161718192021222324252627282930language: node_jsnode_js: stablecache: directories: - node_modulesbefore_install: - npm install -g hexo-cliinstall: - npm install - npm install hexo-deployer-git --savebefore_script: - git config --global user.name &quot;user_name&quot; - git config --global user.email &quot;user_email&quot;script: - hexo clean - hexo generateafter_script: - sed -i &quot;s/gh_token/$&#123;token_name&#125;/g&quot; ./_config.yml # token_name 为上一步中Travis环境变量中设置的name - hexo deploybranches: only: - source 修改_config.yml1234deploy: type: git repo: https://gh_token@github.com/yourname/yourname.github.io.git branch: master 4. 日常使用A.使用 hexo new 新建并编辑文章，或者手动编写md文档放入 source/_post 文件夹 B.使用命令：git push origin source:source 提交 特别说明： 可以使用两个不同仓库进行部署，如：将source部署在一个私有仓库中确保源码安全。 如果使用Coding Pages服务，其自带集成功能，配置方法类似。 如果使用VPS自建Pages服务，可搭建Jenkins实现。]]></content>
+      <categories>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>Hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[hexo_github]]></title>
+    <url>%2F2017%2F12%2F19%2Fhexo-github%2F</url>
+    <content type="text"><![CDATA[使用Hexo+Github搭建个人网站通常个人网站搭建最常见的方式： 1.Wordpress：动态网站，功能更强大。 2.Hexo：静态网站，简洁，快速，安全。 各自特点这里不多介绍，这里我们介绍Hexo搭建方法。 首先看这张架构图： 整个流程就是本地将 *.md 渲染成静态文件，然后Hexo Deploy发布到Github的repository,由GithubPages提供服务访问。 1. 基础环境配置12345yum install git #安装githttps://nodejs.org #安装nodejsnpm install -g hexo-cli #安装hexo 2. 本地Hexo搭建123456789mkdir blog &amp;&amp; cd blog #新建并进入hexo博客目录hexo init #初始化hexonpm install #初始化npmnpm install hexo-deployer-git --save #对应github_pagesnpm install hexo-deployer-rsync --save #对应linux_rsync/一般不使用 3. 远程发布a. 发布到GitHubGitHub设置123456789A. 建立名为youname.github.io的库B. 仓库设置中开启GitHugPages服务C. 域名绑定：&lt;默认访问地址：youname.github.io&gt; C-1. 建立CNAME文件，填写需要绑定的域名。 C-2. 域名做A记录或者CNAME映射。 Hexo关联配置12345678910配置Hexo和GitHub关联：&lt;_config.yml文件&gt;#Deploymentdeploy:type: gitrepo: github: git@github.com:yourname/yourname.github.io.git # coding: git@git.dev.tencent.com:Beavan/Blog.git # 支持同时部署到多个Pages服务branch: master SSH认证配置12345配置GitHub SSHkey认证：本地：ssh-keygen -t rsa -C &quot;邮件地址&quot; #生成ssh密钥GitHub: SSH Keys中添加生成的id_rsa.pub b. 发布到VPSVPS环境配置123456789101112A. 建立git仓库:(GitLab/Gitea/Gogs) A-1. git init --bare blog.git #新建git裸仓库 A-2. vim blog.git/hoos/post-receive #编辑post-receive加入以下命令 git --work-tree=/home/wwwroot/blog --git-dir=/home/git/blog.git checkout -f B. Web_Server配置 配置Nginx/Https虚拟主机指定到网页文件所在目录C. 域名绑定: A or CNAME Hexo关联配置12345678910配置Hexo和GitHub关联：&lt;_config.yml文件&gt;#Deploymentdeploy:type: gitrepo: # github: git@github.com:yourname/yourname.github.io.git vps: git@blog.example.com:/home/git/blog.git # 支持同时部署到多个Pages服务branch: master SSH认证配置12345配置VPS SSHkey认证：本地：ssh-keygen -t rsa -C &quot;邮件地址&quot; #生成ssh密钥VPS: authorized中添加生成的id_rsa.pub 4. 常用命令常用命令： 1234567891011hexo new &quot;postName&quot; #新建文章hexo new page &quot;pageName&quot; #新建页面hexo generate #生成静态页面至public目录hexo server #开启预览访问端口（默认端口4000）hexo deploy #将.deploy目录部署到GitHubhexo clean #清理缓存 缩写： 123456789hexo n == hexo newhexo g == hexo generatehexo s == hexo serverhexo d == hexo deployhexo cl == hexo clean]]></content>
+      <categories>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>Hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[checksuid.sh]]></title>
+    <url>%2F2017%2F12%2F04%2Fchecksuid-sh%2F</url>
+    <content type="text"><![CDATA[Linux中检查Suid脚本：123456789101112#!/bin/bashfind / -perm -4000 -perm -2000 &gt; /tmp/setuid.checkfor i in $(cat /tmp/setuid.check)do grep $i /root/suid.log &gt; /dev/null if ["$?" != "0"] then echo "$i isn't in listfile!" &gt;&gt; /root//root/suid_log_$(date +%F) fidonerm -rf /tmp/setuid.check]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>LinuxShell</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[logrotate.sh]]></title>
+    <url>%2F2017%2F07%2F20%2Flogrotate-sh%2F</url>
+    <content type="text"><![CDATA[Linux简单日志切割脚本：12345678#!/bin/bashexec &gt;/dev/null 2&gt;&amp;1d=`data -d '-1 day' +%Y%m%d`log=/tmp/access.logmv $log /tmp/$d-log/etc/init.d/xxx reloadfind /tmp/ -name "xxx*log" -mtime +30 |xargs rm -f]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>LinuxShell</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[centos_mini_install]]></title>
+    <url>%2F2017%2F07%2F14%2Fcentos-mini-install%2F</url>
+    <content type="text"><![CDATA[Centos_Minimal 常用系统软件包：123yum -y install vim wget curl gcc gcc-c++ make cmake \crontabs iptables lrzsz lsb mlocate ntp net-tools ntsysv setuptool screen \autoconf dstat sysstat system-config-securitylevel-tui system-config-network-tui NetworkManager-tui]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>centos_mini</tag>
+      </tags>
+  </entry>
+</search>

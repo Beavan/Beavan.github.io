@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Beavan</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://yoursite.com/"/>
+  <updated>2022-09-17T06:18:00.000Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name>Beavan</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>hexo+travisCI</title>
+    <link href="http://yoursite.com/2017/12/20/hexo-travisCI/"/>
+    <id>http://yoursite.com/2017/12/20/hexo-travisCI/</id>
+    <published>2017-12-20T11:38:12.000Z</published>
+    <updated>2022-09-17T06:18:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="使用-Travis-CI-自动化部署-Hexo-博客"><a href="#使用-Travis-CI-自动化部署-Hexo-博客" class="headerlink" title="使用 Travis-CI 自动化部署 Hexo 博客"></a>使用 Travis-CI 自动化部署 Hexo 博客</h1><p>Travis CI 是开源的持续集成构建项目，用来构建托管在GitHub上的代码。</p><p>架构图如下：</p><p><img src="https://raw.githubusercontent.com/Beavan/Beavan/main/imgs/hexo-travis.jpg" alt="img"></p><a id="more"></a><p>整个流程就是本地编辑<code>*.md</code>文件，然后push到github中source分支，Travis-CI检测到分支更新从而根据配置文件建立虚拟机进行测试/构建，并将结果部署到github中master分支，实现github pages访问。</p><h2 id="1-配置Hexo-GitHub"><a href="#1-配置Hexo-GitHub" class="headerlink" title="1. 配置Hexo+GitHub"></a>1. 配置Hexo+GitHub</h2><p>配置方法省略，参见”<a href="http://beavan.cn/2017/12/19/hexo-github/" target="_blank" rel="noopener">使用Hexo+Github搭建个人网站</a>“。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GitHub 仓库分支架构：</span><br><span class="line">  master分支：提供Pages服务</span><br><span class="line">    存放 Hexo 生成的静态文件</span><br><span class="line">  source分支：建议私有仓库</span><br><span class="line">    存放 Hexo 项目文件以及构建配置文件&#123;blog/source/.travis.yml&#125;</span><br></pre></td></tr></table></figure><h3 id="更改本地环境配置"><a href="#更改本地环境配置" class="headerlink" title="更改本地环境配置"></a>更改本地环境配置</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cd blog #进入Hexo项目/博客目录</span><br><span class="line">git init #初始化为git仓库</span><br><span class="line">git checkout -b source #创建并切换到 source 分支</span><br><span class="line">git add .</span><br><span class="line">git commit -m &quot;xxx&quot;</span><br><span class="line">git remote add origin git@github.com:yourname/yourname.github.io.git #关联远程仓库</span><br><span class="line">git push origin source:source #提交本地source分支到远程仓库source分支</span><br></pre></td></tr></table></figure><h2 id="2-Travis-CI配置"><a href="#2-Travis-CI配置" class="headerlink" title="2. Travis CI配置"></a>2. Travis CI配置</h2><p>使用GitHub账户登陆Travis CI，它会自动发现GitHub上的已有仓，选择需要执行持续集成的仓库。</p><p>本教程为：<code>yourname/yourname.github.io</code>。</p><h3 id="A-General设置"><a href="#A-General设置" class="headerlink" title="A. General设置"></a>A. General设置</h3><p>进入设置选项，开启以下服务：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Build only if .travis.yml is present 表示“只有当 .travis.yml 存在时才构建”</span><br><span class="line">Build branch updates 表示“当分支更新时构建” 两个选项</span><br></pre></td></tr></table></figure></p><h3 id="B-配置-Acess-Token"><a href="#B-配置-Acess-Token" class="headerlink" title="B. 配置 Acess Token"></a>B. 配置 Acess Token</h3><p>还是设置选项，增加一条环境变量{Enviroment Variables}：</p><p>name：与github开发者设置中 Personal access tokens 设置一致。</p><p>value：在github开发者设置中 Personal access tokens 页面，新建token，并勾选相应权限。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">权限：&#123;这里只需要 repo 下全部和 user 下的 user:email 即可&#125;。</span><br></pre></td></tr></table></figure></p><p>不勾选后面的 Display value in build log。 </p><p><em>Travis可通过调用此变量获得github的权限，从而将构建后的静态文件push到github。</em></p><h2 id="3-配置-travis-yml"><a href="#3-配置-travis-yml" class="headerlink" title="3. 配置 .travis.yml"></a>3. 配置 .travis.yml</h2><p>在本地环境的源码分支{这里是source分支}的根目录下新增一个 .travis.yml 配置文件，内容如下：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">language: node_js</span><br><span class="line">node_js: stable</span><br><span class="line"></span><br><span class="line">cache:</span><br><span class="line">    directories:</span><br><span class="line">        - node_modules</span><br><span class="line"></span><br><span class="line">before_install:</span><br><span class="line">  - npm install -g hexo-cli</span><br><span class="line"></span><br><span class="line">install:</span><br><span class="line">  - npm install</span><br><span class="line">  - npm install hexo-deployer-git --save</span><br><span class="line"></span><br><span class="line">before_script:</span><br><span class="line">  - git config --global user.name &quot;user_name&quot; </span><br><span class="line">  - git config --global user.email &quot;user_email&quot;</span><br><span class="line"></span><br><span class="line">script:</span><br><span class="line">  - hexo clean</span><br><span class="line">  - hexo generate</span><br><span class="line"></span><br><span class="line">after_script:</span><br><span class="line">  - sed -i &quot;s/gh_token/$&#123;token_name&#125;/g&quot; ./_config.yml</span><br><span class="line">  # token_name 为上一步中Travis环境变量中设置的name</span><br><span class="line">  - hexo deploy</span><br><span class="line"></span><br><span class="line">branches:</span><br><span class="line">  only:</span><br><span class="line">    - source</span><br></pre></td></tr></table></figure><h3 id="修改-config-yml"><a href="#修改-config-yml" class="headerlink" title="修改_config.yml"></a>修改_config.yml</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">deploy:</span><br><span class="line">  type: git</span><br><span class="line">  repo: https://gh_token@github.com/yourname/yourname.github.io.git</span><br><span class="line">  branch: master</span><br></pre></td></tr></table></figure><h2 id="4-日常使用"><a href="#4-日常使用" class="headerlink" title="4. 日常使用"></a>4. 日常使用</h2><p>A.使用 <code>hexo new</code> 新建并编辑文章，或者手动编写md文档放入 <code>source/_post</code> 文件夹</p><p>B.使用命令：<code>git push origin source:source</code> 提交</p><p>特别说明：</p><p> 可以使用两个不同仓库进行部署，如：将source部署在一个私有仓库中确保源码安全。 </p><p> 如果使用Coding Pages服务，其自带集成功能，配置方法类似。</p><p> 如果使用VPS自建Pages服务，可搭建Jenkins实现。</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;使用-Travis-CI-自动化部署-Hexo-博客&quot;&gt;&lt;a href=&quot;#使用-Travis-CI-自动化部署-Hexo-博客&quot; class=&quot;headerlink&quot; title=&quot;使用 Travis-CI 自动化部署 Hexo 博客&quot;&gt;&lt;/a&gt;使用 Travis-CI 自动化部署 Hexo 博客&lt;/h1&gt;&lt;p&gt;Travis CI 是开源的持续集成构建项目，用来构建托管在GitHub上的代码。&lt;/p&gt;
+&lt;p&gt;架构图如下：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://raw.githubusercontent.com/Beavan/Beavan/main/imgs/hexo-travis.jpg&quot; alt=&quot;img&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Hexo" scheme="http://yoursite.com/categories/Hexo/"/>
+    
+    
+      <category term="Hexo" scheme="http://yoursite.com/tags/Hexo/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>hexo_github</title>
+    <link href="http://yoursite.com/2017/12/19/hexo-github/"/>
+    <id>http://yoursite.com/2017/12/19/hexo-github/</id>
+    <published>2017-12-19T03:12:15.000Z</published>
+    <updated>2022-09-17T06:18:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="使用Hexo-Github搭建个人网站"><a href="#使用Hexo-Github搭建个人网站" class="headerlink" title="使用Hexo+Github搭建个人网站"></a>使用Hexo+Github搭建个人网站</h1><p>通常个人网站搭建最常见的方式：</p><p>1.Wordpress：动态网站，功能更强大。</p><p>2.Hexo：静态网站，简洁，快速，安全。</p><p>各自特点这里不多介绍，这里我们介绍Hexo搭建方法。</p><a id="more"></a><p>首先看这张架构图：</p><p><img src="https://raw.githubusercontent.com/Beavan/Beavan/main/imgs/hexo-github.jpg" alt="img"></p><p>整个流程就是本地将 <code>*.md</code> 渲染成静态文件，然后Hexo Deploy发布到Github的<code>repository</code>,由GithubPages提供服务访问。</p><h2 id="1-基础环境配置"><a href="#1-基础环境配置" class="headerlink" title="1. 基础环境配置"></a>1. 基础环境配置</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install git  #安装git</span><br><span class="line"></span><br><span class="line">https://nodejs.org #安装nodejs</span><br><span class="line"></span><br><span class="line">npm install -g hexo-cli  #安装hexo</span><br></pre></td></tr></table></figure><h2 id="2-本地Hexo搭建"><a href="#2-本地Hexo搭建" class="headerlink" title="2. 本地Hexo搭建"></a>2. 本地Hexo搭建</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mkdir blog &amp;&amp; cd blog  #新建并进入hexo博客目录</span><br><span class="line"></span><br><span class="line">hexo init  #初始化hexo</span><br><span class="line"></span><br><span class="line">npm install  #初始化npm</span><br><span class="line"></span><br><span class="line">npm install hexo-deployer-git --save #对应github_pages</span><br><span class="line"></span><br><span class="line">npm install hexo-deployer-rsync --save  #对应linux_rsync/一般不使用</span><br></pre></td></tr></table></figure><h2 id="3-远程发布"><a href="#3-远程发布" class="headerlink" title="3. 远程发布"></a>3. 远程发布</h2><h3 id="a-发布到GitHub"><a href="#a-发布到GitHub" class="headerlink" title="a. 发布到GitHub"></a>a. 发布到GitHub</h3><h4 id="GitHub设置"><a href="#GitHub设置" class="headerlink" title="GitHub设置"></a>GitHub设置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">A. 建立名为youname.github.io的库</span><br><span class="line"></span><br><span class="line">B. 仓库设置中开启GitHugPages服务</span><br><span class="line"></span><br><span class="line">C. 域名绑定：&lt;默认访问地址：youname.github.io&gt;</span><br><span class="line"></span><br><span class="line">  C-1. 建立CNAME文件，填写需要绑定的域名。</span><br><span class="line"></span><br><span class="line">  C-2. 域名做A记录或者CNAME映射。</span><br></pre></td></tr></table></figure><h4 id="Hexo关联配置"><a href="#Hexo关联配置" class="headerlink" title="Hexo关联配置"></a>Hexo关联配置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">配置Hexo和GitHub关联：&lt;_config.yml文件&gt;</span><br><span class="line"></span><br><span class="line">#Deployment</span><br><span class="line">deploy:</span><br><span class="line">type: git</span><br><span class="line">repo:</span><br><span class="line">   github: git@github.com:yourname/yourname.github.io.git</span><br><span class="line"> # coding: git@git.dev.tencent.com:Beavan/Blog.git</span><br><span class="line"> # 支持同时部署到多个Pages服务</span><br><span class="line">branch: master</span><br></pre></td></tr></table></figure><h4 id="SSH认证配置"><a href="#SSH认证配置" class="headerlink" title="SSH认证配置"></a>SSH认证配置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">配置GitHub SSHkey认证：</span><br><span class="line"></span><br><span class="line">本地：ssh-keygen -t rsa -C &quot;邮件地址&quot; #生成ssh密钥</span><br><span class="line"></span><br><span class="line">GitHub: SSH Keys中添加生成的id_rsa.pub</span><br></pre></td></tr></table></figure><h3 id="b-发布到VPS"><a href="#b-发布到VPS" class="headerlink" title="b. 发布到VPS"></a>b. 发布到VPS</h3><h4 id="VPS环境配置"><a href="#VPS环境配置" class="headerlink" title="VPS环境配置"></a>VPS环境配置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">A. 建立git仓库:(GitLab/Gitea/Gogs) </span><br><span class="line"></span><br><span class="line">  A-1. git init --bare blog.git #新建git裸仓库</span><br><span class="line"></span><br><span class="line">  A-2. vim blog.git/hoos/post-receive #编辑post-receive加入以下命令</span><br><span class="line">       git --work-tree=/home/wwwroot/blog --git-dir=/home/git/blog.git checkout -f </span><br><span class="line"></span><br><span class="line">B. Web_Server配置</span><br><span class="line"></span><br><span class="line">  配置Nginx/Https虚拟主机指定到网页文件所在目录</span><br><span class="line"></span><br><span class="line">C. 域名绑定: A or CNAME</span><br></pre></td></tr></table></figure><h4 id="Hexo关联配置-1"><a href="#Hexo关联配置-1" class="headerlink" title="Hexo关联配置"></a>Hexo关联配置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">配置Hexo和GitHub关联：&lt;_config.yml文件&gt;</span><br><span class="line"></span><br><span class="line">#Deployment</span><br><span class="line">deploy:</span><br><span class="line">type: git</span><br><span class="line">repo:</span><br><span class="line"> # github: git@github.com:yourname/yourname.github.io.git</span><br><span class="line">   vps: git@blog.example.com:/home/git/blog.git</span><br><span class="line"> # 支持同时部署到多个Pages服务</span><br><span class="line">branch: master</span><br></pre></td></tr></table></figure><h4 id="SSH认证配置-1"><a href="#SSH认证配置-1" class="headerlink" title="SSH认证配置"></a>SSH认证配置</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">配置VPS SSHkey认证：</span><br><span class="line"></span><br><span class="line">本地：ssh-keygen -t rsa -C &quot;邮件地址&quot; #生成ssh密钥</span><br><span class="line"></span><br><span class="line">VPS: authorized中添加生成的id_rsa.pub</span><br></pre></td></tr></table></figure><h2 id="4-常用命令"><a href="#4-常用命令" class="headerlink" title="4. 常用命令"></a>4. 常用命令</h2><p>常用命令：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">hexo new &quot;postName&quot; #新建文章</span><br><span class="line"></span><br><span class="line">hexo new page &quot;pageName&quot; #新建页面</span><br><span class="line"></span><br><span class="line">hexo generate #生成静态页面至public目录</span><br><span class="line"></span><br><span class="line">hexo server #开启预览访问端口（默认端口4000）</span><br><span class="line"></span><br><span class="line">hexo deploy #将.deploy目录部署到GitHub</span><br><span class="line"></span><br><span class="line">hexo clean #清理缓存</span><br></pre></td></tr></table></figure><p>缩写：</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">hexo n == hexo new</span><br><span class="line"></span><br><span class="line">hexo g == hexo generate</span><br><span class="line"></span><br><span class="line">hexo s == hexo server</span><br><span class="line"></span><br><span class="line">hexo d == hexo deploy</span><br><span class="line"></span><br><span class="line">hexo cl == hexo clean</span><br></pre></td></tr></table></figure>]]></content>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;使用Hexo-Github搭建个人网站&quot;&gt;&lt;a href=&quot;#使用Hexo-Github搭建个人网站&quot; class=&quot;headerlink&quot; title=&quot;使用Hexo+Github搭建个人网站&quot;&gt;&lt;/a&gt;使用Hexo+Github搭建个人网站&lt;/h1&gt;&lt;p&gt;通常个人网站搭建最常见的方式：&lt;/p&gt;
+&lt;p&gt;1.Wordpress：动态网站，功能更强大。&lt;/p&gt;
+&lt;p&gt;2.Hexo：静态网站，简洁，快速，安全。&lt;/p&gt;
+&lt;p&gt;各自特点这里不多介绍，这里我们介绍Hexo搭建方法。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="Hexo" scheme="http://yoursite.com/categories/Hexo/"/>
+    
+    
+      <category term="Hexo" scheme="http://yoursite.com/tags/Hexo/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>checksuid.sh</title>
+    <link href="http://yoursite.com/2017/12/04/checksuid-sh/"/>
+    <id>http://yoursite.com/2017/12/04/checksuid-sh/</id>
+    <published>2017-12-04T12:48:54.000Z</published>
+    <updated>2022-09-17T06:18:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Linux中检查Suid脚本：<br><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">find / -perm -4000 -perm -2000 &gt; /tmp/setuid.check</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> $(cat /tmp/setuid.check)</span><br><span class="line"><span class="keyword">do</span></span><br><span class="line">  grep <span class="variable">$i</span> /root/suid.log &gt; /dev/null</span><br><span class="line">  <span class="keyword">if</span> [<span class="string">"$?"</span> != <span class="string">"0"</span>]</span><br><span class="line">  <span class="keyword">then</span> </span><br><span class="line">    <span class="built_in">echo</span> <span class="string">"<span class="variable">$i</span> isn't in listfile!"</span> &gt;&gt; /root//root/suid_log_$(date +%F)</span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line">rm -rf /tmp/setuid.check</span><br></pre></td></tr></table></figure></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Linux中检查Suid脚本：&lt;br&gt;&lt;figure class=&quot;highlight sh&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/s
+      
+    
+    </summary>
+    
+      <category term="Linux" scheme="http://yoursite.com/categories/Linux/"/>
+    
+    
+      <category term="LinuxShell" scheme="http://yoursite.com/tags/LinuxShell/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>logrotate.sh</title>
+    <link href="http://yoursite.com/2017/07/20/logrotate-sh/"/>
+    <id>http://yoursite.com/2017/07/20/logrotate-sh/</id>
+    <published>2017-07-20T12:55:41.000Z</published>
+    <updated>2022-09-17T06:18:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Linux简单日志切割脚本：<br><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">exec</span> &gt;/dev/null 2&gt;&amp;1</span><br><span class="line">d=`data -d <span class="string">'-1 day'</span> +%Y%m%d`</span><br><span class="line"><span class="built_in">log</span>=/tmp/access.log</span><br><span class="line">mv <span class="variable">$log</span> /tmp/<span class="variable">$d</span>-<span class="built_in">log</span></span><br><span class="line">/etc/init.d/xxx reload</span><br><span class="line">find /tmp/ -name <span class="string">"xxx*log"</span> -mtime +30 |xargs rm -f</span><br></pre></td></tr></table></figure></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;Linux简单日志切割脚本：&lt;br&gt;&lt;figure class=&quot;highlight sh&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/sp
+      
+    
+    </summary>
+    
+      <category term="Linux" scheme="http://yoursite.com/categories/Linux/"/>
+    
+    
+      <category term="LinuxShell" scheme="http://yoursite.com/tags/LinuxShell/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>centos_mini_install</title>
+    <link href="http://yoursite.com/2017/07/14/centos-mini-install/"/>
+    <id>http://yoursite.com/2017/07/14/centos-mini-install/</id>
+    <published>2017-07-14T08:02:59.000Z</published>
+    <updated>2022-09-17T06:18:00.000Z</updated>
+    
+    <content type="html"><![CDATA[<p> Centos_Minimal 常用系统软件包：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">yum -y install vim wget curl gcc gcc-c++ make cmake \</span><br><span class="line">crontabs iptables lrzsz lsb mlocate ntp net-tools ntsysv setuptool screen \</span><br><span class="line">autoconf dstat sysstat system-config-securitylevel-tui system-config-network-tui NetworkManager-tui</span><br></pre></td></tr></table></figure></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt; Centos_Minimal 常用系统软件包：&lt;br&gt;&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class
+      
+    
+    </summary>
+    
+      <category term="Linux" scheme="http://yoursite.com/categories/Linux/"/>
+    
+    
+      <category term="centos_mini" scheme="http://yoursite.com/tags/centos-mini/"/>
+    
+  </entry>
+  
+</feed>
